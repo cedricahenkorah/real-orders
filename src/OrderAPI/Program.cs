@@ -1,9 +1,29 @@
+using DotNetEnv;
+using OrderAPI.Configurations;
+
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Bind the "MongoDB" section of appsettings.json to MongoDbSettings
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDB"));
+
+// Replace placeholders with environment variables
+var mongoConnectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING");
+var mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
+
+builder.Configuration["MongoDB:ConnectionString"] =
+    mongoConnectionString ?? throw new Exception("MONGO_CONNECTION_STRING not set.");
+builder.Configuration["MongoDB:DatabaseName"] =
+    mongoDatabaseName ?? throw new Exception("MONGO_DATABASE_NAME not set.");
+
+// Register MongoDB context
+builder.Services.AddSingleton<MongoDbContext>();
 
 var app = builder.Build();
 
@@ -16,29 +36,25 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// Test MongoDB connection
+using (var scope = app.Services.CreateScope())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+    try
+    {
+        if (mongoDbContext.TestConnection())
+        {
+            Console.WriteLine("MongoDB connection successful.");
+        }
+        else
+        {
+            Console.WriteLine("MongoDB connection failed.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error testing MongoDB connection: {ex.Message}");
+    }
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
