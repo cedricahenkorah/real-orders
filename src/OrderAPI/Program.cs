@@ -1,5 +1,7 @@
 using DotNetEnv;
 using OrderAPI.Configurations;
+using OrderAPI.Repositories;
+using OrderAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,13 @@ builder.Configuration["MongoDB:DatabaseName"] =
 // Register MongoDB context
 builder.Services.AddSingleton<MongoDbContext>();
 
+// Register services and repositories
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Add controllers
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -35,6 +44,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Map controllers to routes
+app.MapControllers();
 
 // Test MongoDB connection
 using (var scope = app.Services.CreateScope())
