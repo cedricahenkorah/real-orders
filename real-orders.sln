@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FD590443-24B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrderAPI", "src\OrderAPI\OrderAPI.csproj", "{E007E803-01FF-4628-80A8-ABABCB8E534E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderProcessingService", "src\OrderProcessingService\OrderProcessingService.csproj", "{F25299DC-A0E5-429C-978F-2F74337DC7CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,12 +19,17 @@ Global
 		{E007E803-01FF-4628-80A8-ABABCB8E534E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E007E803-01FF-4628-80A8-ABABCB8E534E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E007E803-01FF-4628-80A8-ABABCB8E534E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F25299DC-A0E5-429C-978F-2F74337DC7CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F25299DC-A0E5-429C-978F-2F74337DC7CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F25299DC-A0E5-429C-978F-2F74337DC7CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F25299DC-A0E5-429C-978F-2F74337DC7CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E007E803-01FF-4628-80A8-ABABCB8E534E} = {FD590443-24B8-44F3-A925-752786800E9E}
+		{F25299DC-A0E5-429C-978F-2F74337DC7CE} = {FD590443-24B8-44F3-A925-752786800E9E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {071939D5-47BA-4C73-BB58-9522D4E13544}
