@@ -1,3 +1,4 @@
+using OrderAPI.Dtos;
 using OrderAPI.Models;
 using OrderAPI.Repositories;
 
@@ -12,8 +13,21 @@ namespace OrderAPI.Services
             _orderRepository = orderRepository;
         }
 
-        public async Task<Order> CreateOrderAsync(Order order)
+        public async Task<Order> CreateOrderAsync(CreateOrderRequestDto createOrderDto)
         {
+            var order = new Order
+            {
+                CustomerId = createOrderDto.CustomerId,
+                Items = createOrderDto
+                    .Items.Select(item => new OrderItem
+                    {
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                    })
+                    .ToList(),
+                Status = "Pending",
+            };
+
             return await _orderRepository.CreateAsync(order);
         }
 
