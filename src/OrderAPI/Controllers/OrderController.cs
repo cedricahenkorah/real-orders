@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using OrderAPI.Dtos;
 using OrderAPI.Models;
 using OrderAPI.Services;
 
@@ -6,25 +8,42 @@ namespace OrderAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrderController(IOrderService orderService) : ControllerBase
+    public class OrderController(IOrderService orderService, IKafkaProducer kafkaProducer)
+        : ControllerBase
     {
         private readonly IOrderService _orderService = orderService;
+        private readonly IKafkaProducer _kafkaProducer = kafkaProducer;
 
         // POST api/order
         [HttpPost]
-        public async Task<IActionResult> CreateOrderAsync([FromBody] Order order)
+        public async Task<IActionResult> CreateOrderAsync(
+            [FromBody] CreateOrderRequestDto createOrderDto
+        )
         {
-            var createdOrder = await _orderService.CreateOrderAsync(order);
+            var createdOrder = await _orderService.CreateOrderAsync(createOrderDto);
             if (createdOrder == null)
             {
                 return BadRequest("Unable to create order.");
             }
 
-            return CreatedAtAction(
-                nameof(GetOrderAsync),
-                new { id = createdOrder.Id },
-                createdOrder
+            // Publish the "OrderCreated" event to Kafka
+            var orderEvent = new
+            {
+                EventType = "OrderCreated",
+                OrderId = createdOrder.Id,
+                CustomerId = createdOrder.CustomerId,
+                Items = createdOrder.Items,
+                Status = "Created",
+                Timestamp = DateTime.UtcNow,
+            };
+
+            await _kafkaProducer.ProduceAsync(
+                "order-events",
+                createdOrder.Id,
+                JsonSerializer.Serialize(orderEvent)
             );
+
+            return Ok(createdOrder);
         }
 
         // GET api/order/{id}
