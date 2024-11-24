@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using OrderAPI.Controllers;
+using OrderAPI.Dtos;
 using OrderAPI.Models;
 using OrderAPI.Services;
 using Xunit;
@@ -13,30 +14,29 @@ namespace OrderAPI.Tests
     {
         private readonly Mock<IOrderService> _mockOrderService;
         private readonly OrderController _controller;
+        private readonly Mock<IKafkaProducer> _mockKafkaProducer;
 
         public OrderControllerTests()
         {
             _mockOrderService = new Mock<IOrderService>();
-            _controller = new OrderController(_mockOrderService.Object);
+            _mockKafkaProducer = new Mock<IKafkaProducer>();
+            _controller = new OrderController(_mockOrderService.Object, _mockKafkaProducer.Object);
         }
 
         [Fact]
         public async Task GetOrderByIdAsync_ValidId_ReturnsOrder()
         {
-          
             var orderId = "6489f1f0c2e7c2eaf0b3f6a1";
             var order = new Order
             {
-                Id = "6489f1f0c2e7c2eaf0b3f6a1", g
-                CustomerId = "12345", 
+                Id = "6489f1f0c2e7c2eaf0b3f6a1",
+                CustomerId = "12345",
                 Items = new List<OrderItem>
                 {
                     new OrderItem { ProductId = "prod001", Quantity = 2 },
                     new OrderItem { ProductId = "prod002", Quantity = 5 },
                 },
-                Status =
-                    "Pending" 
-                ,
+                Status = "Pending",
             };
 
             _mockOrderService
@@ -53,7 +53,6 @@ namespace OrderAPI.Tests
         [Fact]
         public async Task GetOrderByIdAsync_InvalidId_ReturnsNotFound()
         {
-           
             var orderId = "1";
             _mockOrderService
                 .Setup(service => service.GetOrderByIdAsync(orderId))
@@ -67,33 +66,41 @@ namespace OrderAPI.Tests
         [Fact]
         public async Task CreateOrderAsync_ValidOrder_ReturnsCreatedOrder()
         {
-           
-            var order = new Order
+            var createOrderRequest = new CreateOrderRequestDto
             {
-                Id = "6489f1f0c2e7c2eaf0b3f6a1", 
-                CustomerId = "12345", 
+                CustomerId = "12345",
+                Items = new List<OrderItemDto>
+                {
+                    new OrderItemDto { ProductId = "prod001", Quantity = 2 },
+                    new OrderItemDto { ProductId = "prod002", Quantity = 5 },
+                },
+            };
+
+            var createdOrder = new Order
+            {
+                Id = "6489f1f0c2e7c2eaf0b3f6a1",
+                CustomerId = "12345",
                 Items = new List<OrderItem>
                 {
                     new OrderItem { ProductId = "prod001", Quantity = 2 },
                     new OrderItem { ProductId = "prod002", Quantity = 5 },
                 },
-                Status =
-                    "Pending" 
-                ,
+                Status = "Pending",
             };
-            _mockOrderService.Setup(service => service.CreateOrderAsync(order)).ReturnsAsync(order);
+            _mockOrderService
+                .Setup(service => service.CreateOrderAsync(It.IsAny<CreateOrderRequestDto>()))
+                .ReturnsAsync(createdOrder);
 
-            var result = await _controller.CreateOrderAsync(order);
-          
-            var createdAtResult = Assert.IsType<CreatedAtActionResult>(result);
-            var returnedOrder = Assert.IsType<Order>(createdAtResult.Value);
-            Assert.Equal(order.Id, returnedOrder.Id);
+            var result = await _controller.CreateOrderAsync(createOrderRequest);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedOrder = Assert.IsType<Order>(okResult.Value);
+            Assert.Equal(createdOrder.Id, returnedOrder.Id);
         }
 
         [Fact]
         public async Task GetAllOrdersAsync_ReturnsListOfOrders()
         {
-           
             var orders = new List<Order>
             {
                 new Order
@@ -132,7 +139,6 @@ namespace OrderAPI.Tests
         [Fact]
         public async Task DeleteOrderAsync_ValidId_ReturnsNoContent()
         {
-            
             var orderId = "1";
             _mockOrderService
                 .Setup(service => service.DeleteOrderAsync(orderId))
@@ -146,7 +152,6 @@ namespace OrderAPI.Tests
         [Fact]
         public async Task DeleteOrderAsync_InvalidId_ReturnsNotFound()
         {
-         
             var orderId = "1";
             _mockOrderService
                 .Setup(service => service.DeleteOrderAsync(orderId))
