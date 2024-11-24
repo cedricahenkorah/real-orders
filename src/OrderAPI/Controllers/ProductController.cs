@@ -52,7 +52,7 @@ namespace OrderAPI.Controllers
 
             if (!updatedProduct)
             {
-                return NotFound("Unable to update product");
+                return NotFound();
             }
 
             return NoContent();
@@ -65,7 +65,7 @@ namespace OrderAPI.Controllers
 
             if (!deletedProduct)
             {
-                return NotFound("Unable to delete product");
+                return NotFound();
             }
 
             return NoContent();
