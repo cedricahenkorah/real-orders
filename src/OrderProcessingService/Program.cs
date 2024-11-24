@@ -26,21 +26,25 @@ var host = Host.CreateDefaultBuilder(args)
                 Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD")
                 ?? throw new Exception("KAFKA_SASL_PASSWORD not set.");
 
-            // Register services
-            services.AddHostedService<OrderEventConsumer>(); // Kafka consumer hosted service
-
             // Set up Akka.NET actor system
             var actorSystem = ActorSystem.Create("OrderProcessingSystem");
+            services.AddSingleton(actorSystem);
 
-            // Register actors
-            services.AddSingleton<IActorRef>(sp =>
-                actorSystem.ActorOf(Props.Create(() => new OrderActor()), "orderActor")
-            );
-            services.AddSingleton<IActorRef>(sp =>
-                actorSystem.ActorOf(Props.Create(() => new InventoryActor()), "inventoryActor")
-            );
+            // Register ActorProvider
+            services.AddSingleton<ActorProvider>(sp =>
+            {
+                var actorSystem = sp.GetRequiredService<ActorSystem>();
+                return new ActorProvider(actorSystem);
+            });
 
-            // Optionally register configuration settings for reuse
+            // Register OrderManagerActor via ActorProvider
+            services.AddSingleton<IActorRef>(sp =>
+            {
+                var actorProvider = sp.GetRequiredService<ActorProvider>();
+                return actorProvider.GetOrderManagerActor();
+            });
+
+            // Register Kafka settings for reuse
             services.AddSingleton(
                 new KafkaSettings
                 {
@@ -50,9 +54,15 @@ var host = Host.CreateDefaultBuilder(args)
                     SaslPassword = kafkaSaslPassword,
                 }
             );
+
+            // Register the Kafka consumer and pass the OrderManagerActor
+            services.AddHostedService(sp =>
+            {
+                var orderManagerActor = sp.GetRequiredService<IActorRef>(); // OrderManagerActor
+                return new OrderEventConsumer(orderManagerActor);
+            });
         }
     )
     .Build();
 
-// Run the host
 await host.RunAsync();

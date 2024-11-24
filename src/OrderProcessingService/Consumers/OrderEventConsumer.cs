@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -11,12 +12,12 @@ public class OrderEventConsumer : IHostedService
         Environment.GetEnvironmentVariable("KAFKA_TOPIC")
         ?? throw new Exception("KAFKA_TOPIC not set.");
     private readonly IConsumer<string, string> _consumer;
-    private readonly IServiceProvider _serviceProvider; // To resolve dependencies if needed
+    private readonly IActorRef _orderManagerActor;
     private CancellationTokenSource _cancellationTokenSource;
 
-    public OrderEventConsumer(IServiceProvider serviceProvider)
+    public OrderEventConsumer(IActorRef orderManagerActor)
     {
-        _serviceProvider = serviceProvider;
+        _orderManagerActor = orderManagerActor;
 
         var config = new ConsumerConfig
         {
@@ -54,7 +55,7 @@ public class OrderEventConsumer : IHostedService
     {
         Console.WriteLine("Stopping OrderEventConsumer...");
         _cancellationTokenSource.Cancel();
-        _consumer.Close(); // Gracefully close the consumer
+        _consumer.Close();
         return Task.CompletedTask;
     }
 
@@ -75,7 +76,6 @@ public class OrderEventConsumer : IHostedService
 
                     Console.WriteLine($"Received event: {JsonConvert.SerializeObject(orderEvent)}");
 
-                    // Handle the event (e.g., call an actor or process it further)
                     HandleOrderEvent(orderEvent);
                 }
                 catch (ConsumeException e)
@@ -90,7 +90,6 @@ public class OrderEventConsumer : IHostedService
         }
         catch (OperationCanceledException)
         {
-            // Expected during shutdown
             Console.WriteLine("Consumer loop cancelled.");
         }
         finally
@@ -101,7 +100,7 @@ public class OrderEventConsumer : IHostedService
 
     private void HandleOrderEvent(OrderEventDto orderEvent)
     {
-        // Resolve necessary services using _serviceProvider if needed
-        Console.WriteLine($"Processing order: {orderEvent.OrderId}");
+        Console.WriteLine($"Forwarding order {orderEvent.OrderId} to OrderManagerActor...");
+        _orderManagerActor.Tell(orderEvent);
     }
 }
