@@ -15,6 +15,7 @@ namespace OrderAPI.Configurations
         }
 
         public IMongoCollection<Order> Orders => _database.GetCollection<Order>("Orders");
+        public IMongoCollection<Product> Products => _database.GetCollection<Product>("Products");
 
         public bool TestConnection()
         {
