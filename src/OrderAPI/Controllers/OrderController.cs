@@ -94,5 +94,28 @@ namespace OrderAPI.Controllers
 
             return NoContent();
         }
+
+        [HttpPut("status/{id}")]
+        public async Task<IActionResult> UpdateOrderStatusAsync(
+            string id,
+            [FromBody] UpdateOrderStatusDto updateOrderStatusDto
+        )
+        {
+            var order = await _orderService.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = updateOrderStatusDto.Status;
+
+            var success = await _orderService.UpdateOrderAsync(order);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
     }
 }

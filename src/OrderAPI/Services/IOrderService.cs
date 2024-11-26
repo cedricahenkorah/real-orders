@@ -10,5 +10,6 @@ namespace OrderAPI.Services
         Task<List<Order>> GetAllOrdersAsync();
         Task<bool> UpdateOrderAsync(Order order);
         Task<bool> DeleteOrderAsync(string id);
+        Task<bool> UpdateOrderStatusAsync(string id, string status);
     }
 }

@@ -45,5 +45,10 @@ namespace OrderAPI.Services
         {
             return await _orderRepository.DeleteAsync(id);
         }
+
+        public async Task<bool> UpdateOrderStatusAsync(string id, string status)
+        {
+            return await _orderRepository.UpdateOrderStatusAsync(id, status);
+        }
     }
 }

@@ -32,8 +32,24 @@ namespace OrderAPI.Repositories
 
         public async Task<bool> DeleteAsync(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Order Id must be provided.");
+
             var result = await _orders.DeleteOneAsync(order => order.Id == id);
             return result.IsAcknowledged && result.DeletedCount > 0;
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(string id, string status)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(status))
+                throw new ArgumentException("Order Id and status must be provided.");
+
+            var result = await _orders.UpdateOneAsync(
+                o => o.Id == id,
+                Builders<Order>.Update.Set(o => o.Status, status)
+            );
+
+            return result.IsAcknowledged && result.ModifiedCount > 0;
         }
     }
 }

@@ -9,5 +9,6 @@ namespace OrderAPI.Repositories
         Task<List<Order>> GetAllAsync();
         Task<bool> UpdateAsync(Order order);
         Task<bool> DeleteAsync(string id);
+        Task<bool> UpdateOrderStatusAsync(string id, string status);
     }
 }
