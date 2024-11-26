@@ -6,10 +6,12 @@ namespace OrderProcessingService.Actors;
 public class OrderManagerActor : ReceiveActor
 {
     private readonly IActorRef _inventoryActor;
+    private readonly HttpClient _httpClient;
 
-    public OrderManagerActor(IActorRef inventoryActor)
+    public OrderManagerActor(IActorRef inventoryActor, HttpClient httpClient)
     {
         _inventoryActor = inventoryActor;
+        _httpClient = httpClient;
 
         Receive<OrderEventDto>(orderEvent =>
         {
@@ -25,7 +27,7 @@ public class OrderManagerActor : ReceiveActor
                 {
                     Console.WriteLine($"Creating OrderActor for order {orderEvent.OrderId}");
                     return Context.ActorOf(
-                        Props.Create(() => new OrderActor(_inventoryActor)),
+                        Props.Create(() => new OrderActor(_inventoryActor, _httpClient)),
                         orderActorName
                     );
                 });

@@ -26,6 +26,8 @@ var host = Host.CreateDefaultBuilder(args)
                 Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD")
                 ?? throw new Exception("KAFKA_SASL_PASSWORD not set.");
 
+            services.AddHttpClient();
+
             // Set up Akka.NET actor system
             var actorSystem = ActorSystem.Create("OrderProcessingSystem");
             services.AddSingleton(actorSystem);
@@ -33,8 +35,9 @@ var host = Host.CreateDefaultBuilder(args)
             // Register ActorProvider
             services.AddSingleton<ActorProvider>(sp =>
             {
+                var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
                 var actorSystem = sp.GetRequiredService<ActorSystem>();
-                return new ActorProvider(actorSystem);
+                return new ActorProvider(actorSystem, httpClient);
             });
 
             // Register OrderManagerActor via ActorProvider
