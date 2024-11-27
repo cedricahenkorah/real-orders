@@ -20,30 +20,57 @@ namespace OrderAPI.Controllers
             [FromBody] CreateOrderRequestDto createOrderDto
         )
         {
-            var createdOrder = await _orderService.CreateOrderAsync(createOrderDto);
-            if (createdOrder == null)
+            if (createOrderDto == null)
             {
-                return BadRequest("Unable to create order.");
+                return BadRequest("Request body cannot be null. Unable to create order.");
             }
 
-            // Publish the "OrderCreated" event to Kafka
-            var orderEvent = new
+            try
             {
-                EventType = "OrderCreated",
-                OrderId = createdOrder.Id,
-                CustomerId = createdOrder.CustomerId,
-                Items = createdOrder.Items,
-                Status = "Created",
-                Timestamp = DateTime.UtcNow,
-            };
+                var createdOrder = await _orderService.CreateOrderAsync(createOrderDto);
 
-            await _kafkaProducer.ProduceAsync(
-                "order-events",
-                createdOrder.Id,
-                JsonSerializer.Serialize(orderEvent)
-            );
+                if (createdOrder == null)
+                {
+                    return BadRequest("Unable to create order.");
+                }
 
-            return Ok(createdOrder);
+                // Publish the "OrderCreated" event to Kafka
+                var orderEvent = new
+                {
+                    EventType = "OrderCreated",
+                    OrderId = createdOrder.Id,
+                    CustomerId = createdOrder.CustomerId,
+                    Items = createdOrder.Items,
+                    Status = "Created",
+                    Timestamp = DateTime.UtcNow,
+                };
+                try
+                {
+                    await _kafkaProducer.ProduceAsync(
+                        "order-events",
+                        createdOrder.Id,
+                        JsonSerializer.Serialize(orderEvent)
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to publish OrderCreated event to Kafka. {ex}");
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "Order created but event publishing failed."
+                    );
+                }
+
+                return Ok(createdOrder);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error occurred while creating order. {ex}");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "An error occurred while processing your request."
+                );
+            }
         }
 
         // GET api/order/{id}
